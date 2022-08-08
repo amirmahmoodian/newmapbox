@@ -12,6 +12,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -87,6 +88,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         private const val LONGITUDE = 35.69551
         private const val ZOOM = 14.0
     }
+    private var dis:Double = 0.0
 
     var text:String = " {\n" +
             "   \"type\": \"FeatureCollection\",\n" +
@@ -113,6 +115,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             "      \"geometry\": {\n" +
             "        \"type\": \"LineString\",\n" +
             "        \"coordinates\": ["
+
+    var firstpoint:Boolean =true
 
     var flag:Boolean = false
 
@@ -146,22 +150,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 location = enhancedLocation,
                 keyPoints = locationMatcherResult.keyPoints,
             )
-            if (!firstLocationUpdateReceived){
-                myline += "[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) + "," + " " + ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]"
-        }
-            else{
-                var we = myline.substring(myline.length - 5, myline.length)
-                var we2 = myline
-                if (myline.substring(myline.length - 5, myline.length)=="]}}]}") {
+            if(flag) {
+                if (firstpoint) {
+                    firstpoint = false
+                    myline += "[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) + "," + " " + ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]    "
+                } else {
+                    var we = myline.substring(myline.length - 5, myline.length)
+                    var we2 = myline
+                    if (myline.substring(myline.length - 5, myline.length) == "]}}]}") {
 
                         myline = myline.substring(0, myline.length - 6)
                         println(myline)
                         println("############################")
 
+                    }
+                    myline += ",[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) +
+                            "," + " " +
+                            ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]  "
+
                 }
-                myline += ",[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0)+
-                        "," + " " +
-                        ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]  "
             }
 
             if (!firstLocationUpdateReceived) {
@@ -170,6 +177,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
 
             binding.start.apply {
+//                if(!flag) {
+//                    binding.start.visibility = View.VISIBLE
+//                }
                 setOnClickListener {
                     flag = true
                     binding.start.visibility = View.INVISIBLE
@@ -180,20 +190,36 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         setOnClickListener {
                             flag = false
                             binding.stop.visibility = View.INVISIBLE
+
+//                    Toast.makeText(this@MainActivity,
+//                        "your distance traved is equal to = "
+//                                +  dis, Toast.LENGTH_LONG).show()
+
                             binding.window.apply {
                                 binding.window.visibility = View.VISIBLE
                                 binding.multipleWaypointResetRouteButton.apply {
                                     setOnClickListener {
                                         binding.window.visibility = View.INVISIBLE
                                         binding.start.visibility = View.VISIBLE
+
                                     }
                                 }
                             }
+
+//                    val intent = Intent(this@MainActivity, NewActivity::class.java)
+//                    startActivity(intent)
+
+//                            addViewAnnotation(Point.fromLngLat(
+//                                enhancedLocation.longitude, enhancedLocation.latitude))
                         }
                     }
                 }
             }
             if (flag){
+                if(!firstpoint) {
+                    provide()
+                    liner()
+                }
                 addWaypoint(Point.fromLngLat(enhancedLocation.longitude, enhancedLocation.latitude))
             }
         }
@@ -217,27 +243,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val originPoint = originLocation?.let {
             Point.fromLngLat(it.longitude, it.latitude)
         } ?: return
+
         if (addedWaypoints.isEmpty) {
             addedWaypoints.addRegular(destination)
+            addAnnotationToMap(destination,1)
         }
+
         if(addedWaypoints.coordinatesList().size>1) {
             if (destination !=
                 addedWaypoints.coordinatesList()[addedWaypoints.coordinatesList().size - 1]
             ) {
                 addedWaypoints.addRegular(destination)
-                addAnnotationToMap(originPoint,3)
+                addAnnotationToMap(destination,3)
             }
         }
         else {
             addedWaypoints.addRegular(destination)
         }
-        distance += TurfMeasurement.distance(
+
+        dis += TurfMeasurement.distance(
             addedWaypoints.coordinatesList()[addedWaypoints.coordinatesList().size - 2],
             addedWaypoints.coordinatesList()[addedWaypoints.coordinatesList().size - 1],
             TurfConstants.UNIT_KILOMETERS
         )
-        val distance = ((distance * 100.0).roundToInt() / 100.0).toBigDecimal().toPlainString()
+        val distance = ((dis * 100.0).roundToInt() / 100.0).toBigDecimal().toPlainString()
         binding.dis.text = distance
+
+
     }
 
     private fun addAnnotationToMap(destination: Point,type:Int) {
@@ -495,36 +527,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }//toDo
 
     private fun liner(){
+
         val file = File("asxsets","from_crema_to_council_crest.geojson")
-        myline += "]}}]}"
         println(myline)
         println("****************************")
-
-        writeToFile(myline,this)
+//
+//        writeToFile(myline,this)
 
         var aa = readFromFile(this)
 
         println(aa)
         println("*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
 
-        var files: Array<String> = this.fileList()
-        this.getDir("sampledata", Context.MODE_PRIVATE)
-//        val file = File("asxsets","from_crema_to_council_crest.geojson")
-        print(this.getDir("sampledata", Context.MODE_PRIVATE))
-        println("&&&&&&&&&&&&&&&&")
-//        red()
-        println("^^^^^^^^^^^^")
+//        var files: Array<String> = this.fileList()
+//        this.getDir("sampledata", Context.MODE_PRIVATE)
+////        val file = File("asxsets","from_crema_to_council_crest.geojson")
+//        print(this.getDir("sampledata", Context.MODE_PRIVATE))
+//        println("&&&&&&&&&&&&&&&&")
+////        red()
+//        println("^^^^^^^^^^^^")
 //        val contentUri: Uri ?=
 //            myExternalFile?.let { getUriForFile(this, "com.example.walktracke", it) }
 //        println(contentUri)
 //        println("^^^^^^^^^^^^")
 
 
+        // Create the LineString from the list of coordinates and then make a GeoJSON
+        // FeatureCollection so we can add the line to our map as a layer.
+//
+//        val lineString: LineString = LineString.fromLngLats(addedWaypoints.coordinatesList())
+//
+//        val featureCollection = FeatureCollection.fromFeature(Feature.fromGeometry(lineString))
+
         mapboxMap.loadStyle(
             (
                     style(styleUri = Style.MAPBOX_STREETS) {
-                        +geoJsonSource(GEOJSON_SOURCE_ID){
-
+                        +geoJsonSource(GEOJSON_SOURCE_ID) {
+                            url("file:///data/user/0/com.example.walktracker/files/xxyyxx.geojson")
                         }
 
                         +lineLayer("linelayer", GEOJSON_SOURCE_ID) {
@@ -538,15 +577,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     )
         )
 
-    } //toDo
+//        myline()
+
+    }
 
     fun provide() {
-        val content = text
+        myline += "]}}]}"
+        val content = myline
         val file = File(filesDir, "xxyyxx.geojson")
         if (!writeFile(file, content)) {
             return
         }
         val uri = getUriForFile(this, "com.example.provide", file)
+        val uri2: Uri = Uri.fromFile(file)
         println(uri)
         println("****!!!!!!!!!!!!!!!****")
 
@@ -558,8 +601,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         )
 //        intent.setClipData(clipData);
 //        startActivity(intent);
-    }//toDo
-
+    }
     private fun writeFile(file: File, content: String): Boolean {
         var stream: FileOutputStream? = null
         try {
@@ -584,8 +626,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
         }
         return false
-    }//toDo
-
+    }
 }
 
 class WaypointsSet {
@@ -662,5 +703,6 @@ class WaypointsSet {
         return !isLastWaypoint && !isFirstWaypoint
     }
 }
+
 
 
