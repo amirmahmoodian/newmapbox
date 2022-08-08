@@ -1,0 +1,14 @@
+ {
+   "type": "FeatureCollection",
+   "features": [
+     {
+       "type": "Feature",
+       "properties": {
+         "name": "Crema to Council Crest"
+       },
+       "geometry": {
+         "type": "LineString",
+         "coordinates": [
+         [51.36512, 35.6953],
+         [51.36499, 36.69552]  ]}}]}
+

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Walk Tracker</string>
+    <string name="mapbox_access_token">
+        pk.eyJ1IjoiY2hhaW10b3JwIiwiYSI6ImNsNXBvemFscjFxM3QzY2x2anY1eHBjb28ifQ.V4mA8JV8w5d_lWDA5L8eqg
+    </string>
+    <string name="stop">STOP</string>
+    <string name="start">START</string>
+</resources>
