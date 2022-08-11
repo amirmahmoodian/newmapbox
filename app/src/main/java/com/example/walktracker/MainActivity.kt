@@ -72,6 +72,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private val filepath = "MyFileStorage"
 
+     var myprevlinelong:Double = 0.0
+
+    var myprevlinelat:Double = 0.0
+
     var myExternalFile: File? = null
 
     companion object {
@@ -89,21 +93,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         private const val ZOOM = 14.0
     }
     private var dis:Double = 0.0
-
-    var text:String = " {\n" +
-            "   \"type\": \"FeatureCollection\",\n" +
-            "   \"features\": [\n" +
-            "     {\n" +
-            "       \"type\": \"Feature\",\n" +
-            "       \"properties\": {\n" +
-            "         \"name\": \"Crema to Council Crest\"\n" +
-            "       },\n" +
-            "       \"geometry\": {\n" +
-            "         \"type\": \"LineString\",\n" +
-            "         \"coordinates\": [\n" +
-            "         [51.36512, 35.6953],\n" +
-            "         [51.36499, 36.69552]  ]}}]}"
-
     var myline :String="{\n" +
             "  \"type\": \"FeatureCollection\",\n" +
             "  \"features\": [\n" +
@@ -152,75 +141,37 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             )
             if(flag) {
                 if (firstpoint) {
+                    myline += "[" +
+                            ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) +
+                            "," + " " +
+                            ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]    "
                     firstpoint = false
-                    myline += "[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) + "," + " " + ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]    "
                 } else {
-                    var we = myline.substring(myline.length - 5, myline.length)
-                    var we2 = myline
-                    if (myline.substring(myline.length - 5, myline.length) == "]}}]}") {
-
-                        myline = myline.substring(0, myline.length - 6)
+                    if (myprevlinelong==enhancedLocation.longitude && myprevlinelat==
+                            enhancedLocation.latitude
+                    ) {
+                        println("user just stayed in one palce for now ;)")
+                    } else {
+                        if (myline.substring(myline.length - 5, myline.length) == "]}}]}") {
+                            myline = myline.substring(0, myline.length - 6)
+                        }
+                        myline += ",[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) +
+                                "," + " " +
+                                ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]  "
+                        myprevlinelong = enhancedLocation.longitude
+                        myprevlinelat = enhancedLocation.latitude
                         println(myline)
                         println("############################")
-
+                        provide()
+                        liner()
+                        addWaypoint(Point.fromLngLat(enhancedLocation.longitude, enhancedLocation.latitude))
                     }
-                    myline += ",[" + ((enhancedLocation.longitude * 100000.0).roundToInt() / 100000.0) +
-                            "," + " " +
-                            ((enhancedLocation.latitude * 100000.0).roundToInt() / 100000.0) + "]  "
-
                 }
             }
 
             if (!firstLocationUpdateReceived) {
                 firstLocationUpdateReceived = true
                 moveCameraTo(enhancedLocation)
-            }
-
-            binding.start.apply {
-//                if(!flag) {
-//                    binding.start.visibility = View.VISIBLE
-//                }
-                setOnClickListener {
-                    flag = true
-                    binding.start.visibility = View.INVISIBLE
-                    binding.stop.apply {
-                        if(flag) {
-                            binding.stop.visibility = View.VISIBLE
-                        }
-                        setOnClickListener {
-                            flag = false
-                            binding.stop.visibility = View.INVISIBLE
-
-//                    Toast.makeText(this@MainActivity,
-//                        "your distance traved is equal to = "
-//                                +  dis, Toast.LENGTH_LONG).show()
-
-                            binding.window.apply {
-                                binding.window.visibility = View.VISIBLE
-                                binding.multipleWaypointResetRouteButton.apply {
-                                    setOnClickListener {
-                                        binding.window.visibility = View.INVISIBLE
-                                        binding.start.visibility = View.VISIBLE
-
-                                    }
-                                }
-                            }
-
-//                    val intent = Intent(this@MainActivity, NewActivity::class.java)
-//                    startActivity(intent)
-
-//                            addViewAnnotation(Point.fromLngLat(
-//                                enhancedLocation.longitude, enhancedLocation.latitude))
-                        }
-                    }
-                }
-            }
-            if (flag){
-                if(!firstpoint) {
-                    provide()
-                    liner()
-                }
-                addWaypoint(Point.fromLngLat(enhancedLocation.longitude, enhancedLocation.latitude))
             }
         }
 
@@ -246,7 +197,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         if (addedWaypoints.isEmpty) {
             addedWaypoints.addRegular(destination)
-            addAnnotationToMap(destination,1)
+//            addAnnotationToMap(destination,1)
         }
 
         if(addedWaypoints.coordinatesList().size>1) {
@@ -254,7 +205,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 addedWaypoints.coordinatesList()[addedWaypoints.coordinatesList().size - 1]
             ) {
                 addedWaypoints.addRegular(destination)
-                addAnnotationToMap(destination,3)
+//                addAnnotationToMap(destination,3)
             }
         }
         else {
@@ -268,8 +219,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         )
         val distance = ((dis * 100.0).roundToInt() / 100.0).toBigDecimal().toPlainString()
         binding.dis.text = distance
-
-
     }
 
     private fun addAnnotationToMap(destination: Point,type:Int) {
@@ -370,6 +319,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         } else {
             myExternalFile = File(getExternalFilesDir(filepath), filename)
         }
+        binding.start.apply {
+//                if(!flag) {
+//                    binding.start.visibility = View.VISIBLE
+//                }
+            setOnClickListener {
+                flag = true
+                binding.start.visibility = View.INVISIBLE
+                binding.stop.apply {
+                    if(flag) {
+                        binding.stop.visibility = View.VISIBLE
+                    }
+                    setOnClickListener {
+                        flag = false
+                        binding.stop.visibility = View.INVISIBLE
+                        binding.window.apply {
+                            binding.window.visibility = View.VISIBLE
+                            binding.multipleWaypointResetRouteButton.apply {
+                                setOnClickListener {
+                                    binding.window.visibility = View.INVISIBLE
+                                    binding.start.visibility = View.VISIBLE
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
@@ -392,8 +369,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // This sensor requires permission android.permission.ACTIVITY_RECOGNITION.
         // So don't forget to add the following permission in AndroidManifest.xml present in manifest folder of the app.
         stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)!!
-
-
         if (stepSensor == null) {
             // This will give a toast message to the user if there is no sensor in the device
             Toast.makeText(this, "No sensor detected on this device", Toast.LENGTH_SHORT).show()
@@ -409,19 +384,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-
-        // Calling the TextView that we made in activity_main.xml
-        // by the id given to that TextView
         var tv_stepsTaken = findViewById<TextView>(R.id.stepsnumber)
 
         if (running) {
             totalSteps = event!!.values[0]
-
-            // Current steps are calculated by taking the difference of total steps
-            // and previous steps
             val currentSteps = totalSteps.toInt() - previousTotalSteps.toInt()
-
-            // It will show the current steps to the user
             tv_stepsTaken.text = ("$currentSteps")
         }
     }
@@ -433,7 +400,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         resetbut.setOnClickListener {
             Toast.makeText(this, "Long tap to reset", Toast.LENGTH_SHORT).show()
         }
-
         resetbut.setOnLongClickListener {
             previousTotalSteps = totalSteps
             tv_stepsTaken.text = 0.toString()
@@ -445,10 +411,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun saveData() {
-
-        // Shared Preferences will allow us to save
-        // and retrieve data in the form of key,value pair.
-        // In this function we will save data
         val sharedPreferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
 
         val editor = sharedPreferences.edit()
@@ -458,11 +420,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun loadData() {
 
-        // In this function we will retrieve data
         val sharedPreferences = getSharedPreferences("myPrefs", Context.MODE_PRIVATE)
         val savedNumber = sharedPreferences.getFloat("key1", 0f)
 
-        // Log.d is used for debugging purposes
         Log.d("MainActivity", "$savedNumber")
 
         previousTotalSteps = savedNumber
@@ -481,90 +441,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         locationPermissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun writeToFile(data: String, context: Context) {
-        try {
-            val outputStreamWriter =
-                OutputStreamWriter(context.openFileOutput( "from_crema_to_council_crest.geojson", MODE_PRIVATE))
-            outputStreamWriter.write(data)
-
-            outputStreamWriter.close()
-        } catch (e: IOException) {
-            Log.e("Exception", "File write failed: " + e.toString())
-        }
-    }//toDo
-
-    fun red (){
-        try {
-            val fos: FileOutputStream = FileOutputStream(myExternalFile)
-            fos.write(text.toByteArray())
-            fos.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }//toDo
-
-    private fun readFromFile(context: Context): String? {
-        var ret = ""
-        try {
-            val inputStream: InputStream? = context.openFileInput( "xxyyxx.geojson")
-            if (inputStream != null) {
-                val inputStreamReader = InputStreamReader(inputStream)
-                val bufferedReader = BufferedReader(inputStreamReader)
-                var receiveString: String? = ""
-                val stringBuilder = StringBuilder()
-                while (bufferedReader.readLine().also { receiveString = it } != null) {
-                    stringBuilder.append("\n").append(receiveString)
-                }
-                inputStream.close()
-                ret = stringBuilder.toString()
-            }
-        } catch (e: FileNotFoundException) {
-            Log.e("login activity", "File not found: " + e.toString())
-        } catch (e: IOException) {
-            Log.e("login activity", "Can not read file: $e")
-        }
-        return ret
-    }//toDo
-
     private fun liner(){
-
-        val file = File("asxsets","from_crema_to_council_crest.geojson")
-        println(myline)
-        println("****************************")
-//
-//        writeToFile(myline,this)
-
-        var aa = readFromFile(this)
-
-        println(aa)
-        println("*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-
-//        var files: Array<String> = this.fileList()
-//        this.getDir("sampledata", Context.MODE_PRIVATE)
-////        val file = File("asxsets","from_crema_to_council_crest.geojson")
-//        print(this.getDir("sampledata", Context.MODE_PRIVATE))
-//        println("&&&&&&&&&&&&&&&&")
-////        red()
-//        println("^^^^^^^^^^^^")
-//        val contentUri: Uri ?=
-//            myExternalFile?.let { getUriForFile(this, "com.example.walktracke", it) }
-//        println(contentUri)
-//        println("^^^^^^^^^^^^")
-
-
-        // Create the LineString from the list of coordinates and then make a GeoJSON
-        // FeatureCollection so we can add the line to our map as a layer.
-//
-//        val lineString: LineString = LineString.fromLngLats(addedWaypoints.coordinatesList())
-//
-//        val featureCollection = FeatureCollection.fromFeature(Feature.fromGeometry(lineString))
 
         mapboxMap.loadStyle(
             (
                     style(styleUri = Style.MAPBOX_STREETS) {
+
                         +geoJsonSource(GEOJSON_SOURCE_ID) {
                             url("file:///data/user/0/com.example.walktracker/files/xxyyxx.geojson")
                         }
+
 
                         +lineLayer("linelayer", GEOJSON_SOURCE_ID) {
                             lineCap(LineCap.ROUND)
@@ -576,9 +462,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                     )
         )
-
-//        myline()
-
     }
 
     fun provide() {
@@ -588,19 +471,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (!writeFile(file, content)) {
             return
         }
-        val uri = getUriForFile(this, "com.example.provide", file)
-        val uri2: Uri = Uri.fromFile(file)
-        println(uri)
-        println("****!!!!!!!!!!!!!!!****")
-
-//        Intent intent = new Intent().setClassName("com.demo.filereceiver", "com.demo.filereceiver.MainActivity");
-//        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        val clipData = ClipData(
-            ClipDescription("Meshes", arrayOf(ClipDescription.MIMETYPE_TEXT_URILIST)),
-            ClipData.Item(uri)
-        )
-//        intent.setClipData(clipData);
-//        startActivity(intent);
+//        val uri2: Uri = Uri.fromFile(file)
+//        println("****!!!!!!!!!!!!!!!****")
     }
     private fun writeFile(file: File, content: String): Boolean {
         var stream: FileOutputStream? = null

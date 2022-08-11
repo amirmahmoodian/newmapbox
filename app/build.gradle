@@ -46,5 +46,7 @@ dependencies {
 
     implementation 'com.mapbox.maps:android:10.7.0'
     implementation "com.mapbox.navigation:android:2.6.0"
+    implementation "com.mapbox.mapboxsdk:mapbox-android-telemetry:6.1.0"
+
 
 }
